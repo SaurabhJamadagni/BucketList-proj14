@@ -5,27 +5,39 @@
 //  Created by Saurabh Jamadagni on 10/11/22.
 //
 
-import MapKit
+import LocalAuthentication
 import SwiftUI
 
-struct Location: Identifiable {
-    let id = UUID()
-    let name: String
-    let coordinate: CLLocationCoordinate2D
-}
-
 struct ContentView: View {
-    @State private var mapRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 51.5, longitude: -0.12),
-                                                      span: MKCoordinateSpan(latitudeDelta: 0.2, longitudeDelta: 0.2))
-    
-    let locations = [
-        Location(name: "Buckingham Palace", coordinate: CLLocationCoordinate2D(latitude: 51.501, longitude: -0.141)),
-        Location(name: "Tower of London", coordinate: CLLocationCoordinate2D(latitude: 51.508, longitude: -0.076))
-    ]
+    @State private var isUnlocked: Bool = false
     
     var body: some View {
-        Map(coordinateRegion: $mapRegion, annotationItems: locations) { location in
-            MapMarker(coordinate: location.coordinate)
+        VStack {
+            if isUnlocked {
+                Text("Unlocked Device")
+            } else {
+                Text("Locked Device")
+            }
+        }
+        .onAppear(perform: authenticate)
+    }
+    
+    func authenticate() {
+        let context = LAContext()
+        var error: NSError?
+        
+        if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
+            let reason = "Required to access data." // This is the reason used in case of Touch ID.
+            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+                if success {
+                    // authenticated
+                    isUnlocked = true
+                } else {
+                    // There was a problem with authentication.
+                }
+            }
+        } else {
+            // No biometrics.
         }
     }
 }
