@@ -5,39 +5,72 @@
 //  Created by Saurabh Jamadagni on 10/11/22.
 //
 
-import LocalAuthentication
+import MapKit
 import SwiftUI
 
 struct ContentView: View {
-    @State private var isUnlocked: Bool = false
+    @State private var mapRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 50, longitude: 0),
+                                                      span: MKCoordinateSpan(latitudeDelta: 25, longitudeDelta: 25))
+    
+    @State private var locations = [Location]()
+    @State private var selectedPlace: Location?
     
     var body: some View {
-        VStack {
-            if isUnlocked {
-                Text("Unlocked Device")
-            } else {
-                Text("Locked Device")
-            }
-        }
-        .onAppear(perform: authenticate)
-    }
-    
-    func authenticate() {
-        let context = LAContext()
-        var error: NSError?
-        
-        if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
-            let reason = "Required to access data." // This is the reason used in case of Touch ID.
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
-                if success {
-                    // authenticated
-                    isUnlocked = true
-                } else {
-                    // There was a problem with authentication.
+        ZStack {
+            Map(coordinateRegion: $mapRegion, annotationItems: locations) {location in
+                MapAnnotation(coordinate: location.coordinates) {
+                    
+                    VStack {
+                        Image(systemName: "star.circle")
+                            .resizable()
+                            .foregroundColor(.blue)
+                            .frame(width: 44, height: 44)
+                            .background(.white)
+                            .clipShape(Circle())
+                        
+                        Text(location.name)
+                            .font(.footnote)
+                            .fixedSize()
+                    }
+                    .onTapGesture {
+                        selectedPlace = location
+                    }
                 }
             }
-        } else {
-            // No biometrics.
+            .ignoresSafeArea()
+            
+            Circle()
+                .fill(.blue)
+                .opacity(0.3)
+                .frame(width: 32, height: 32)
+            
+            VStack {
+                Spacer()
+                
+                HStack {
+                    Spacer()
+                    Button {
+                        let newLocation = Location(id: UUID(), name: "New Place", description: "Adding a new place.", longitude: mapRegion.center.longitude, latitude: mapRegion.center.latitude)
+                        
+                        locations.append(newLocation)
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .padding()
+                    .background(.black.opacity(0.7))
+                    .foregroundColor(.white)
+                    .font(.title)
+                    .clipShape(Circle())
+                    .padding(.trailing)
+                }
+            }
+        }
+        .sheet(item: $selectedPlace) { place in
+            EditView(location: place) { newLocation in
+                if let index = locations.firstIndex(of: place) {
+                    locations[index] = newLocation
+                }
+            }
         }
     }
 }
