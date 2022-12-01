@@ -9,15 +9,11 @@ import MapKit
 import SwiftUI
 
 struct ContentView: View {
-    @State private var mapRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 50, longitude: 0),
-                                                      span: MKCoordinateSpan(latitudeDelta: 25, longitudeDelta: 25))
-    
-    @State private var locations = [Location]()
-    @State private var selectedPlace: Location?
+    @StateObject private var vm = ViewModel()
     
     var body: some View {
         ZStack {
-            Map(coordinateRegion: $mapRegion, annotationItems: locations) {location in
+            Map(coordinateRegion: $vm.mapRegion, annotationItems: vm.locations) {location in
                 MapAnnotation(coordinate: location.coordinates) {
                     
                     VStack {
@@ -33,7 +29,7 @@ struct ContentView: View {
                             .fixedSize()
                     }
                     .onTapGesture {
-                        selectedPlace = location
+                        vm.selectedPlace = location
                     }
                 }
             }
@@ -50,9 +46,7 @@ struct ContentView: View {
                 HStack {
                     Spacer()
                     Button {
-                        let newLocation = Location(id: UUID(), name: "New Place", description: "Adding a new place.", longitude: mapRegion.center.longitude, latitude: mapRegion.center.latitude)
-                        
-                        locations.append(newLocation)
+                        vm.addLocation()
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -65,11 +59,9 @@ struct ContentView: View {
                 }
             }
         }
-        .sheet(item: $selectedPlace) { place in
+        .sheet(item: $vm.selectedPlace) { place in
             EditView(location: place) { newLocation in
-                if let index = locations.firstIndex(of: place) {
-                    locations[index] = newLocation
-                }
+                vm.update(location: newLocation)
             }
         }
     }
