@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import LocalAuthentication
 import MapKit
 
 extension ContentView {
@@ -15,6 +16,7 @@ extension ContentView {
         
         @Published private(set) var locations: [Location]
         @Published var selectedPlace: Location?
+        @Published var isUnlocked: Bool = false
         
         let savePath = FileManager.documentsDirectory.appendingPathComponent("SavedPlaces")
         
@@ -56,6 +58,27 @@ extension ContentView {
                 locations[index] = location
             }
             save()
+        }
+        
+        func authenticate() {
+            let context = LAContext()
+            var error: NSError?
+            
+            if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+                let reason = "Please authenticate for access"
+                
+                context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+                    if success {
+                        Task { @MainActor in
+                            self.isUnlocked = true  // Not done by the main actor since we calling evaluatePolicy that is something by apple.
+                        }
+                    } else {
+                        // error
+                    }
+                }
+            } else {
+                // no biometrics
+            }
         }
     }
 }

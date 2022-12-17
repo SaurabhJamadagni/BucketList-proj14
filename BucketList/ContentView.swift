@@ -12,57 +12,67 @@ struct ContentView: View {
     @StateObject private var vm = ViewModel()
     
     var body: some View {
-        ZStack {
-            Map(coordinateRegion: $vm.mapRegion, annotationItems: vm.locations) {location in
-                MapAnnotation(coordinate: location.coordinates) {
-                    
-                    VStack {
-                        Image(systemName: "star.circle")
-                            .resizable()
-                            .foregroundColor(.blue)
-                            .frame(width: 44, height: 44)
-                            .background(.white)
-                            .clipShape(Circle())
+        if vm.isUnlocked {
+            ZStack {
+                Map(coordinateRegion: $vm.mapRegion, annotationItems: vm.locations) {location in
+                    MapAnnotation(coordinate: location.coordinates) {
                         
-                        Text(location.name)
-                            .font(.footnote)
-                            .fixedSize()
-                    }
-                    .onTapGesture {
-                        vm.selectedPlace = location
+                        VStack {
+                            Image(systemName: "star.circle")
+                                .resizable()
+                                .foregroundColor(.blue)
+                                .frame(width: 44, height: 44)
+                                .background(.white)
+                                .clipShape(Circle())
+                            
+                            Text(location.name)
+                                .font(.footnote)
+                                .fixedSize()
+                        }
+                        .onTapGesture {
+                            vm.selectedPlace = location
+                        }
                     }
                 }
-            }
-            .ignoresSafeArea()
-            
-            Circle()
-                .fill(.blue)
-                .opacity(0.3)
-                .frame(width: 32, height: 32)
-            
-            VStack {
-                Spacer()
+                .ignoresSafeArea()
                 
-                HStack {
+                Circle()
+                    .fill(.blue)
+                    .opacity(0.3)
+                    .frame(width: 32, height: 32)
+                
+                VStack {
                     Spacer()
-                    Button {
-                        vm.addLocation()
-                    } label: {
-                        Image(systemName: "plus")
+                    
+                    HStack {
+                        Spacer()
+                        Button {
+                            vm.addLocation()
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .padding()
+                        .background(.black.opacity(0.7))
+                        .foregroundColor(.white)
+                        .font(.title)
+                        .clipShape(Circle())
+                        .padding(.trailing)
                     }
-                    .padding()
-                    .background(.black.opacity(0.7))
-                    .foregroundColor(.white)
-                    .font(.title)
-                    .clipShape(Circle())
-                    .padding(.trailing)
                 }
             }
-        }
-        .sheet(item: $vm.selectedPlace) { place in
-            EditView(location: place) { newLocation in
-                vm.update(location: newLocation)
+            .sheet(item: $vm.selectedPlace) { place in
+                EditView(location: place) { newLocation in
+                    vm.update(location: newLocation)
+                }
             }
+        } else {
+            Button("Unlock Places") {
+                vm.authenticate()
+            }
+            .padding()
+            .background(.blue)
+            .foregroundColor(.white)
+            .clipShape(Capsule())
         }
     }
 }
